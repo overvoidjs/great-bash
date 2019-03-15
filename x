@@ -16,6 +16,7 @@ showHelp(){
   echo -e "prockiller - убить процесс по имени"
   echo -e "zipkey - создать зашифрованный архив и удалить исходник"
   echo -e "cod - проверка статуса ответа сайта из консоли"
+  echo -e "makeliveos - создание загрузочной флешки с постоянным шифрованным хранилищем"
   echo -e ""
 }
 
@@ -189,6 +190,46 @@ iptables -t mangle -X
 iptables -P INPUT ACCEPT
 iptables -P FORWARD ACCEPT
 iptables -P OUTPUT ACCEPT
+}
+
+makeliveos(){
+  echo -e "Создание загрузочной флешки."
+  echo -e "Для начала выберем флешку:"
+  echo -e
+  sudo fdisk -l
+  echo -e
+  echo -e "Введите имя флешки, без # , пример:"
+  echo -e "sdb"
+  echo -e
+  read loflash
+    echo -e
+  echo -e "Введите имя образа(должно находиться в дирректории скрипта):"
+  echo -e "kali.iso"
+  echo -e
+  read loiso
+  sudo dd if=$loiso of=/dev/$loflash bs=512k
+    echo -e
+  echo -e "Введите последнее свободное место Start/Начало, пример:"
+  echo -e "2794MB"
+  echo -e
+  sudo parted /dev/$loflash unit MB print free
+  read lomb
+    echo -e
+  echo -e "Введите последнее имя раздела, пример:"
+  echo -e "sdb3"
+  echo -e
+  read lonamer
+    echo -e
+  echo -e "Введите введите размер в гигабайтах пример:"
+  echo -e "размер флешки - занятое пространство(то что указывали в MB)"
+    echo -e "В моем случае это 14gb - 2794MB = 9gb"
+  echo -e
+  read losize
+  sudo parted /dev/$loflash mkpart primary ext3 $lomb $losize
+    echo -e
+      echo -e "Ответьте YES (Именно большими и укажите пароль для хранилища)"
+        echo -e
+  sudo cryptsetup --verbose --verify-passphrase luksFormat /dev/$lonamer
 }
 
    if [ ! -z $(type -t $FUNCTION | grep function) ]; then
