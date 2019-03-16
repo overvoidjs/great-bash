@@ -131,65 +131,16 @@ dockerapp(){
 }
 
 torbuild(){
-sudo apt-get install tor
-sudo sh -c "echo 'VirtualAddrNetworkIPv4 10.192.0.0/10' >> /etc/tor/torrc"
-sudo sh -c "echo 'AutomapHostsOnResolve 1' >> /etc/tor/torrc"
-sudo sh -c "echo 'TransPort 9040' >> /etc/tor/torrc"
-sudo sh -c "echo 'DNSPort 53' >> /etc/tor/torrc"
-sudo sh -c "echo 'ExcludeExitNodes {RU},{UA},{BY}' >> /etc/tor/torrc"
+sudo apt-get install tor privoxy
 }
 
+
 torstart() {
-
-pickTheVers=`grep tor /etc/passwd`
-fly=${pickTheVers:13:3}
-
-sudo rm -f /etc/resolv.conf
-echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
-sudo chattr +i /etc/resolv.conf
-
-_non_tor="192.168.1.0/24 192.168.0.0/24"
-
-_tor_uid="$fly"
-
-_trans_port="9040"
-
-iptables -F
-iptables -t nat -F
-
-iptables -t nat -A OUTPUT -m owner --uid-owner $_tor_uid -j RETURN
-iptables -t nat -A OUTPUT -p udp --dport 53 -j REDIRECT --to-ports 53
-
-for _clearnet in $_non_tor 127.0.0.0/9 127.128.0.0/10; do
-   iptables -t nat -A OUTPUT -d $_clearnet -j RETURN
-done
-
-iptables -t nat -A OUTPUT -p tcp --syn -j REDIRECT --to-ports $_trans_port
-
-iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-for _clearnet in $_non_tor 127.0.0.0/8; do
-   iptables -A OUTPUT -d $_clearnet -j ACCEPT
-done
-
-iptables -A OUTPUT -m owner --uid-owner $_tor_uid -j ACCEPT
-iptables -A OUTPUT -j REJECT
-
+sudo ./src/torer.py -l
 }
 
 torstop() {
-echo "Stopping firewall and allowing everyone..."
-sudo chattr -i /etc/resolv.conf
-echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
-iptables -F
-iptables -X
-iptables -t nat -F
-iptables -t nat -X
-iptables -t mangle -F
-iptables -t mangle -X
-iptables -P INPUT ACCEPT
-iptables -P FORWARD ACCEPT
-iptables -P OUTPUT ACCEPT
+sudo ./src/torer.py -f
 }
 
 makeliveos(){
@@ -233,8 +184,6 @@ makeliveos(){
 }
 
    if [ ! -z $(type -t $FUNCTION | grep function) ]; then
-        init-xdebug
-        check-env
         $1
     else
         showHelp
