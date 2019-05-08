@@ -130,6 +130,21 @@ dockerapp(){
   echo "Done!"
 }
 
+imageweserv(){
+  git clone https://github.com/weserv/images.git
+  cp app/config.example.lua app/config.lua
+  docker build . -t imagesweserv
+  docker run \
+    -v $(pwd):/var/www/imagesweserv \
+    -v $(pwd)/config/nginx/conf.d:/usr/local/openresty/nginx/conf/conf.d/ \
+    -v $(pwd)/logs/supervisor:/var/log/supervisor \
+    -v /dev/shm:/dev/shm \
+    -p 80:80 \
+    -d \
+    --name=imagesweserv \
+    imagesweserv
+}
+
 torbuild(){
 sudo apt-get install tor privoxy
 }
